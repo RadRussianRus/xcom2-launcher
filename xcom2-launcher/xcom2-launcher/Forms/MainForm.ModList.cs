@@ -379,6 +379,34 @@ namespace XCOM2Launcher.Forms
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
+        private void ResubscribeToMods()
+        {
+            // Confirmation dialog
+            var text = modlist_ListObjectListView.SelectedObjects.Count == 1
+                ? $"Are you sure you want to download the mod '{ModList.SelectedObjects[0]?.Name}'?"
+                : $"Are you sure you want to download {modlist_ListObjectListView.SelectedObjects.Count} mods?";
+
+            var r = MessageBox.Show(text, "Confirm Download", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+            if (r != DialogResult.OK)
+                return;
+
+            // Resubscribe
+            var mods = ModList.SelectedObjects.ToList();
+            Mods.All.Where(m => m.State.HasFlag(ModState.NotInstalled) && m.Source == ModSource.SteamWorkshop).ToList();
+            foreach (var mod in mods)
+            {
+                Log.Info("Resubscribing to mod " + mod.ID);
+
+                if (mod.Source == ModSource.SteamWorkshop && mod.State.HasFlag(ModState.NotInstalled)) {
+                    Workshop.Subscribe((ulong) mod.WorkshopID);
+                    Workshop.DownloadItem((ulong) mod.WorkshopID);
+                }
+            }
+
+            MessageBox.Show("Launch XCOM after the download is finished in order to use the mod" + (mods.Count == 1 ? "." : "s."), "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        }
+
         private void DeleteMods()
         {
             // Confirmation dialog
@@ -664,6 +692,7 @@ namespace XCOM2Launcher.Forms
             var selectedMods = ModList.SelectedObjects.ToList();
 
             MenuItem renameItem = null;
+            MenuItem resubscribeItem = null;
             MenuItem showInExplorerItem = null;
             MenuItem showOnSteamItem = null;
             MenuItem showInBrowser = null;
@@ -855,6 +884,8 @@ namespace XCOM2Launcher.Forms
                     }
 
                 };
+
+                resubscribeItem = new MenuItem("Resubscribe", delegate { ResubscribeToMods(); });
             }
 
             if (selectedMods.Any(mod => !mod.isActive))
@@ -896,6 +927,9 @@ namespace XCOM2Launcher.Forms
 
             if (renameItem != null)
                 menu.MenuItems.Add(renameItem);
+
+            if (resubscribeItem != null)
+                menu.MenuItems.Add(resubscribeItem);
 
             menu.MenuItems.Add(updateItem);
             menu.MenuItems.Add("-");
