@@ -379,6 +379,58 @@ namespace XCOM2Launcher.Forms
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
+        private void UnsubscribeFromMods()
+        {
+            // Confirmation dialog
+            var text = modlist_ListObjectListView.SelectedObjects.Count == 1
+                ? $"Are you sure you want to unsubscribe from '{ModList.SelectedObjects[0]?.Name}'?\r\nMod won't be deleted from list."
+                : $"Are you sure you want to unsubscribe from {modlist_ListObjectListView.SelectedObjects.Count} mods?\r\nMods won't be deleted from list.";
+
+            var r = MessageBox.Show(text, "Confirm unsubscribing", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+            if (r != DialogResult.OK)
+                return;
+
+            // Unsubscribe
+            var mods = ModList.SelectedObjects.ToList();
+            foreach (var mod in mods)
+            {
+                Log.Info("Unsubscribing from mod " + mod.ID);
+
+                // Set State for all mods that depend on this one to MissingDependencies
+                var dependentMods = Mods.GetDependentMods(mod);
+                dependentMods.ForEach(m =>
+                {
+                    m.SetState(ModState.MissingDependencies);
+                    modlist_ListObjectListView.RefreshObject(m);
+                });
+
+                // unsubscribe
+                if (mod.Source == ModSource.SteamWorkshop)
+                    Workshop.Unsubscribe((ulong) mod.WorkshopID);
+
+                // delete files
+                try
+                {
+                    Directory.Delete(mod.Path, true);
+                }
+                catch (DirectoryNotFoundException) 
+                {
+                    // the directory was already removed
+                } 
+                catch (Exception ex) 
+                {
+                    // inform the user if something went wrong
+                    string message = $"Error while deleting mod folder: {Environment.NewLine}";
+                    message += $"'{mod.Path}' {Environment.NewLine} {Environment.NewLine} {ex.Message}";
+                    Log.Warn(message, ex);
+                    MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            RefreshModList();
+            UpdateConflictInfo();
+        }
+
         private void DeleteMods()
         {
             // Confirmation dialog
@@ -668,6 +720,7 @@ namespace XCOM2Launcher.Forms
             MenuItem showOnSteamItem = null;
             MenuItem showInBrowser = null;
             MenuItem fetchWorkshopTagsItem = null;
+            MenuItem unsubscribeItem = null;
             MenuItem enableAllItem = null;
             MenuItem disableAllItem = null;
             MenuItem disableDuplicates = null;
@@ -855,6 +908,8 @@ namespace XCOM2Launcher.Forms
                     }
 
                 };
+
+                unsubscribeItem = new MenuItem("Unsubscribe", delegate { UnsubscribeFromMods(); });
             }
 
             if (selectedMods.Any(mod => !mod.isActive))
@@ -921,6 +976,10 @@ namespace XCOM2Launcher.Forms
                 menu.MenuItems.Add("-");
 
             menu.MenuItems.Add(toggleVisibility);
+
+            if (unsubscribeItem != null)
+                menu.MenuItems.Add(unsubscribeItem);
+
             menu.MenuItems.Add(deleteItem);
 
             if (Settings.EnableDuplicateModIdWorkaround)
