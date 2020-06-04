@@ -32,5 +32,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: ./xcom2-launcher/xcom2-launcher/bin
+          path: ./xcom2-launcher/xcom2-launcher/bin/${{ matrix.config }}
           name: xcom2-launcher-${{ matrix.config }}
