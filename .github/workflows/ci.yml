@@ -19,6 +19,10 @@ jobs:
         run: |
           cd /d "%programfiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\"
           echo ::add-path::%cd%
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.2
+      - name: Restore NuGet packages
+        run: nuget restore xcom2-launcher\xcom2-launcher.sln
       - name: Build
         shell: cmd
         run: |
