@@ -15,6 +15,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v2
       - name: Build
+        shell: cmd
         run: |
           call vcvars32.bat
           msbuild xcom2-launcher\xcom2-launcher.sln /nologo /p:Configuration=${{ matrix.config }},Platform="Any CPU"
