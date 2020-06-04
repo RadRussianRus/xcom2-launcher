@@ -1,0 +1,24 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    matrix:
+      config:
+        - Debug
+        - Release
+    
+    steps:
+      - name: Clone
+        uses: actions/checkout@v2
+      - name: Build
+        run: |
+          call vcvars32.bat
+          msbuild xcom2-launcher\xcom2-launcher.sln /nologo /p:Configuration=${{ matrix.config }},Platform="Any CPU"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./xcom2-launcher/xcom2-launcher/bin
+          name: xcom2-launcher-${{ matrix.config }}
