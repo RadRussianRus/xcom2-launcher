@@ -27,8 +27,7 @@ jobs:
         shell: cmd
         run: |
           call vcvars32.bat
-          cd xcom2-launcher
-          msbuild xcom2-launcher.sln /nologo /p:Configuration=${{ matrix.config }},Platform="Any CPU"
+          msbuild xcom2-launcher\xcom2-launcher.sln /nologo /p:Configuration=${{ matrix.config }},Platform="Any CPU"
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
