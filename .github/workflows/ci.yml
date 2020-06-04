@@ -5,10 +5,11 @@ jobs:
   build:
     name: Build
     runs-on: windows-latest
-    matrix:
-      config:
-        - Debug
-        - Release
+    strategy:
+      matrix:
+        config:
+         - Debug
+         - Release
     
     steps:
       - name: Clone
