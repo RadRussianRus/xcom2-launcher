@@ -1,0 +1,32 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+         - Debug
+         - Release
+    
+    steps:
+      - name: Clone
+        uses: actions/checkout@v2
+      - name: Unshallow cloned repo
+        run: git fetch --unshallow
+      - name: Setup environment
+        shell: cmd
+        run: |
+          cd /d "%programfiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\"
+          echo ::add-path::%cd%
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.2
+      - name: Restore NuGet packages
+        run: nuget restore xcom2-launcher\xcom2-launcher.sln
+      - name: Build
+        shell: cmd
+        run: |
+          call vcvars32.bat
+          msbuild xcom2-launcher\xcom2-launcher.sln /nologo /p:Configuration=${{ matrix.config }},Platform="Any CPU"
